@@ -8,6 +8,8 @@
 
 module Life where
 
+import Step ( step )
+
 import Prelude hiding ( not, or, and )
 import qualified Prelude
 
@@ -88,28 +90,6 @@ next g = do
         return (p, y)
     return $ build bnd pairs
 
-step x xs = do
-    cs <- counts 3 xs
-    keep <- and [ x, cs !! 2 ]
-    let birth = cs !! 3
-    or [ keep, birth ]
-    
-
--- | output !! k  == True
--- if exactly  k  of the inputs are True
-counts :: MonadSAT m
-       => Int -> [ Boolean ] 
-       -> m [ Boolean ]
-counts w xs = do
-    t <- constant True ; f <- constant False
-    let handle cs x = do
-           ds <- forM cs $ \ c -> boolean
-           forM ( zip cs ds ) $ \ (c,d) -> do
-               assert_fun3 ( \ c d x -> Prelude.not x <= ( c == d ) ) c d x
-           forM ( zip ( f : cs) ds ) $ \ (c,d) -> do
-               assert_fun3 ( \ c d x -> x <= ( c == d ) ) c d x
-           return ds
-    foldM handle ( t : replicate w f ) xs
 
     
 

@@ -21,7 +21,7 @@ config0 = Config { period = 3
                  , width = 9 -- , height = 9
                  , cells = Nothing
                  , stator = Nothing, rotor = Nothing
-                 , method = Binary
+                 , method = Direct                           
                  }
 
 config :: Parser Config
@@ -31,7 +31,7 @@ config = Config
   <*> option (Just <$> auto) ( long "cells" <> short 'c' <> value Nothing )
   <*> option (Just <$> auto) ( long "stator" <> short 's' <> value Nothing )
   <*> option (Just <$> auto) ( long "rotor" <> short 'r' <> value Nothing )
-  <*> option auto ( long "method" <> short 'm' <> value Binary
+  <*> option auto ( long "method" <> short 'm' <> value Direct
                     <> metavar (show [minBound..maxBound::Method] ))
 
 parse :: IO Config

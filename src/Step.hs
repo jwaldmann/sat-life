@@ -53,8 +53,24 @@ select' k (x:xs) =
 
 -- | counts* k xs = ys  =>
 --     ys!!i  <=> exactly i of the inputs are true.
+
 counts_split k [x] = do
    return [ not x , x ]
+   
+counts_split k [x,y] = do
+   c0 <- and $ map not [x,y]
+   c1 <- xor2 x y
+   c2 <- and [x,y]
+   return [c0,c1,c2]
+
+{-
+counts_split k xs | length xs <= 3 =
+  forM [ 0 .. min k $ length xs ] $ \ i -> do
+    cs <- forM (select' i xs) $ \ (ys,zs) ->
+      and $ ys ++ map not zs
+    or cs  
+-}
+   
 counts_split k xs =  do
    let (lo,hi) = splitAt (div (length xs) 2) xs
    clo <- counts_split k lo

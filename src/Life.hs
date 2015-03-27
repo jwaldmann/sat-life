@@ -29,6 +29,7 @@ import System.Environment
 import Data.Ix ( range, inRange )
 
 main_with c = do
+    print c
     Just gs <- solve $ osc c
     void $ forM ( zip [ 0..  ] gs ) $ \ (t, g) -> do
         putStrLn $ unwords [ "time", show t ]

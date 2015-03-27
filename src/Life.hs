@@ -54,20 +54,28 @@ osc c = do
     when (p == 1) $ do
       assert $ elems g0
     let handle 0 gs = return gs
-        handle k (g:gs) = do g' <- next g ; handle (k-1) (g' : g : gs)
+        handle k (g:gs) = do g' <- next c g ; handle (k-1) (g' : g : gs)
     gs <- handle p [ g0 ]
     forM gs bordered
     monadic assert [ equals ( head gs ) ( last gs ) ]
     forM [ d | d <- [1 .. p - 1] , 0 == mod p d ] $ \ d -> 
         monadic assert [ fmap not $ equals ( gs !! 0 ) ( gs !! d ) ]
+
+    footprint <- foldM union (head gs) (tail gs)
+    stator <- foldM intersection (head gs) (tail gs)
+    rotor <- intersection footprint $ complement stator
+
     case C.stator c of
       Nothing -> return ()
       Just s -> do
-        footprint <- foldM union (head gs) (tail gs)
-        stator <- foldM intersection (head gs) (tail gs)
-        rotor <- intersection footprint $ complement stator
         ok <- atmost s $ elems stator
         assert [ ok ]
+    case C.rotor c of
+      Nothing -> return ()
+      Just s -> do
+        ok <- atmost s $ elems rotor
+        assert [ ok ]
+        
     return $ decode $ reverse gs
 
 bordered g = do
@@ -75,7 +83,7 @@ bordered g = do
     forM [ u .. d ] $ \ x -> forM [ l  , r ] $ \ y -> assert [ not $ g!(x,y) ]
     forM [ u ,  d ] $ \ x -> forM [ l .. r ] $ \ y -> assert [ not $ g!(x,y) ]
 
-next g = do
+next c g = do
     f <- constant False
     let bnd = bounds g
     let neighbours (i,j) = do
@@ -86,7 +94,7 @@ next g = do
                then g ! (i', j')
                else f
     pairs <- forM ( assocs g ) $ \ (p, x) -> do
-        y <- step x $ neighbours p
+        y <- step c x $ neighbours p
         return (p, y)
     return $ build bnd pairs
 

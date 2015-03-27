@@ -2,6 +2,8 @@
 
 module Step where
 
+import qualified Config as C
+
 import Satchmo.Boolean
 
 import Data.List ( inits, tails, sortBy )
@@ -10,12 +12,15 @@ import Data.Function (on)
 import Prelude hiding (and, or, not, (||), (&&) )
 import qualified Prelude
 import Control.Monad ( forM, foldM, replicateM, guard )
+import Control.Applicative
+import qualified Data.Map.Strict as M
 
-step =
-  step_mod
-  -- step_orig
+step c = case C.method c of
+  C.Unary  -> step_with counts
+  C.Binary -> step_with counts_split
+  C.Direct -> step_direct
 
-step_mod x xs = do
+step_direct x xs = do
   out <- boolean
   forM (select' 4 xs) $ \ (ys,zs) -> -- at least 4 neighbours
     assert_implies ( ys               ) [ not out ]
@@ -44,7 +49,26 @@ select' k (x:xs) =
   ++ map (\(l,r) -> (x:l,r)) (select' (k-1) xs)
 
 
-step_orig x xs = do
+---------------------------------------------------------
+
+-- | counts* k xs = ys  =>
+--     ys!!i  <=> exactly i of the inputs are true.
+counts_split k [x] = do
+   return [ not x , x ]
+counts_split k xs =  do
+   let (lo,hi) = splitAt (div (length xs) 2) xs
+   clo <- counts_split k lo
+   chi <- counts_split k hi
+   m <- M.fromListWith (++) <$> sequence ( do
+     (i,c) <- zip [0..] clo
+     (j,d) <- zip [0..] chi
+     guard $ i+j <= k
+     return $ do e <- and [c,d] ; return (i+j,[e])  )
+   forM (M.toAscList m) $ \ (_, es) -> or es
+
+----------------------------------------------------------
+
+step_with counts x xs = do
     cs <- counts 3 xs
     keep <- and [ x, cs !! 2 ]
     let birth = cs !! 3

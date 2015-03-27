@@ -11,17 +11,24 @@ import Prelude hiding (and, or, not, (||), (&&) )
 import qualified Prelude
 import Control.Monad ( forM, foldM, replicateM, guard )
 
-step = step_mod
+step =
+  step_mod
   -- step_orig
 
 step_mod x xs = do
   out <- boolean
-  forM (select 4 xs) $ \ ys -> assert $ not out : map not ys
-  forM (select 7 xs) $ \ ys -> assert $ not out : ys
-  forM (select 6 xs) $ \ ys -> assert $ not out : x : ys
-  forM (select' 3 xs) $ \ (ys,zs) -> assert $ out : map not ys ++ zs
-  forM (select' 2 xs) $ \ (ys,zs) -> assert $ out : not x : map not ys ++ zs
+  forM (select' 4 xs) $ \ (ys,zs) -> -- at least 4 neighbours
+    assert_implies ( ys               ) [ not out ]
+  forM (select' 3 xs) $ \ (ys,zs) -> -- exactly 3
+    assert_implies ( ys ++ map not zs ) [ out ]
+  forM (select' 2 xs) $ \ (ys,zs) -> do -- exactly 2
+    assert_implies ( ys ++ map not zs ) [ not x, out ]
+    assert_implies ( ys ++ map not zs ) [ x, not out ]
+  forM (select' 1 xs) $ \ (ys,zs) -> -- at most 1 neigh
+    assert_implies (       map not zs ) [ not out ]
   return out
+
+assert_implies xs ys = assert $ map not xs ++ ys
 
 select :: Int -> [a] -> [[a]]
 select 0 xs = [[]]
@@ -30,7 +37,7 @@ select k (x:xs) =
   select k xs ++ (map (x:) $ select (k-1) xs)
 
 select' :: Int -> [a] -> [([a],[a])]
-select' 0 xs = [([],[])]
+select' 0 xs = [([],xs)]
 select' k [] = []
 select' k (x:xs) =
      map (\(l,r) -> (l,x:r)) (select'     k xs)

@@ -33,7 +33,7 @@ main_with c = do
     void $ forM ( zip [ 0..  ] gs ) $ \ (t, g) -> do
         putStrLn $ unwords [ "time", show t ]
         printA g
-        print c
+    print c
 
 printA :: A.Array (Int,Int) Bool -> IO ()
 printA a = putStrLn $ unlines $ do
